@@ -1,4 +1,4 @@
-import { Headers, Http, RequestOptions, Response } from '@angular/http';
+import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs/Observable';
 import { ErrorObservable } from 'rxjs/observable/ErrorObservable';
 import 'rxjs/add/operator/map';
@@ -12,13 +12,13 @@ export declare type ModelType<T extends JsonApiModel> = {
     new (datastore: JsonApiDatastore, data: any): T;
 };
 export declare class JsonApiDatastore {
-    protected http: Http;
+    protected http: HttpClient;
     private _headers;
     private _store;
     private toQueryString;
     private readonly getDirtyAttributes;
     protected config: DatastoreConfig;
-    constructor(http: Http);
+    constructor(http: HttpClient);
     /** @deprecated - use findAll method to take all models **/
     query<T extends JsonApiModel>(modelType: ModelType<T>, params?: any, headers?: Headers, customUrl?: string): Observable<T[]>;
     findAll<T extends JsonApiModel>(modelType: ModelType<T>, params?: any, headers?: Headers, customUrl?: string): Observable<JsonApiQueryData<T>>;
@@ -34,12 +34,14 @@ export declare class JsonApiDatastore {
     protected getRelationships(data: any): any;
     protected isValidToManyRelation(objects: Array<any>): boolean;
     protected buildSingleRelationshipData(model: JsonApiModel): any;
-    protected extractQueryData<T extends JsonApiModel>(res: any, modelType: ModelType<T>, withMeta?: boolean): T[] | JsonApiQueryData<T>;
+    protected extractQueryData<T extends JsonApiModel>(body: any, modelType: ModelType<T>, withMeta?: boolean): T[] | JsonApiQueryData<T>;
     protected deserializeModel<T extends JsonApiModel>(modelType: ModelType<T>, data: any): T;
-    protected extractRecordData<T extends JsonApiModel>(res: Response, modelType: ModelType<T>, model?: T): T;
+    protected extractRecordData<T extends JsonApiModel>(res: HttpResponse<Object>, modelType: ModelType<T>, model?: T): T;
     protected handleError(error: any): ErrorObservable;
     protected parseMeta(body: any, modelType: ModelType<JsonApiModel>): any;
-    protected getOptions(customHeaders?: Headers): RequestOptions;
+    /** @deprecated - use buildHeaders method to build request headers **/
+    protected getOptions(customHeaders?: Headers): any;
+    protected buildHeaders(customHeaders?: Headers): HttpHeaders;
     private _toQueryString(params);
     addToStore(modelOrModels: JsonApiModel | JsonApiModel[]): void;
     protected resetMetadataAttributes<T extends JsonApiModel>(res: T, attributesMetadata: any, modelType: ModelType<T>): T;

@@ -1,4 +1,3 @@
-import { Headers } from '@angular/http';
 import { Observable } from 'rxjs/Observable';
 import { JsonApiDatastore } from '../services/json-api-datastore.service';
 import { ModelConfig } from '../interfaces/model-config.interface';

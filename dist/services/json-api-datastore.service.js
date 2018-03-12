@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var core_1 = require("@angular/core");
-var http_1 = require("@angular/http");
+var http_1 = require("@angular/common/http");
 var find_1 = require("lodash-es/find");
 var Observable_1 = require("rxjs/Observable");
 require("rxjs/add/operator/map");
@@ -39,25 +39,25 @@ var JsonApiDatastore = /** @class */ (function () {
     /** @deprecated - use findAll method to take all models **/
     JsonApiDatastore.prototype.query = function (modelType, params, headers, customUrl) {
         var _this = this;
-        var options = this.getOptions(headers);
+        var requestHeaders = this.buildHeaders(headers);
         var url = this.buildUrl(modelType, params, undefined, customUrl);
-        return this.http.get(url, options)
+        return this.http.get(url, { headers: requestHeaders })
             .map(function (res) { return _this.extractQueryData(res, modelType); })
             .catch(function (res) { return _this.handleError(res); });
     };
     JsonApiDatastore.prototype.findAll = function (modelType, params, headers, customUrl) {
         var _this = this;
-        var options = this.getOptions(headers);
+        var requestHeaders = this.buildHeaders(headers);
         var url = this.buildUrl(modelType, params, undefined, customUrl);
-        return this.http.get(url, options)
+        return this.http.get(url, { headers: requestHeaders })
             .map(function (res) { return _this.extractQueryData(res, modelType, true); })
             .catch(function (res) { return _this.handleError(res); });
     };
     JsonApiDatastore.prototype.findRecord = function (modelType, id, params, headers, customUrl) {
         var _this = this;
-        var options = this.getOptions(headers);
+        var requestHeaders = this.buildHeaders(headers);
         var url = this.buildUrl(modelType, params, id, customUrl);
-        return this.http.get(url, options)
+        return this.http.get(url, { headers: requestHeaders, observe: 'response' })
             .map(function (res) { return _this.extractRecordData(res, modelType); })
             .catch(function (res) { return _this.handleError(res); });
     };
@@ -82,7 +82,7 @@ var JsonApiDatastore = /** @class */ (function () {
         var modelType = model.constructor;
         var modelConfig = model.modelConfig;
         var typeName = modelConfig.type;
-        var options = this.getOptions(headers);
+        var requestHeaders = this.buildHeaders(headers);
         var relationships = this.getRelationships(model);
         var url = this.buildUrl(modelType, params, model.id, customUrl);
         var httpCall;
@@ -95,10 +95,10 @@ var JsonApiDatastore = /** @class */ (function () {
             }
         };
         if (model.id) {
-            httpCall = this.http.patch(url, body, options);
+            httpCall = this.http.patch(url, body, { headers: requestHeaders, observe: 'response' });
         }
         else {
-            httpCall = this.http.post(url, body, options);
+            httpCall = this.http.post(url, body, { headers: requestHeaders, observe: 'response' });
         }
         return httpCall
             .map(function (res) { return [200, 201].indexOf(res.status) !== -1 ? _this.extractRecordData(res, modelType, model) : model; })
@@ -113,9 +113,9 @@ var JsonApiDatastore = /** @class */ (function () {
     };
     JsonApiDatastore.prototype.deleteRecord = function (modelType, id, headers, customUrl) {
         var _this = this;
-        var options = this.getOptions(headers);
+        var requestHeaders = this.buildHeaders(headers);
         var url = this.buildUrl(modelType, null, id, customUrl);
-        return this.http.delete(url, options).catch(function (res) { return _this.handleError(res); });
+        return this.http.delete(url, { headers: requestHeaders }).catch(function (res) { return _this.handleError(res); });
     };
     JsonApiDatastore.prototype.peekRecord = function (modelType, id) {
         var type = Reflect.getMetadata('JsonApiModelConfig', modelType).type;
@@ -134,6 +134,7 @@ var JsonApiDatastore = /** @class */ (function () {
         configurable: true
     });
     JsonApiDatastore.prototype.buildUrl = function (modelType, params, id, customUrl) {
+        // TODO: use HttpParams instead of appending a string to the url
         var queryParams = this.toQueryString(params);
         if (customUrl) {
             return queryParams ? customUrl + "?" + queryParams : customUrl;
@@ -188,10 +189,9 @@ var JsonApiDatastore = /** @class */ (function () {
         }
         return relationShipData;
     };
-    JsonApiDatastore.prototype.extractQueryData = function (res, modelType, withMeta) {
+    JsonApiDatastore.prototype.extractQueryData = function (body, modelType, withMeta) {
         var _this = this;
         if (withMeta === void 0) { withMeta = false; }
-        var body = res.json();
         var models = [];
         body.data.forEach(function (data) {
             var model = _this.deserializeModel(modelType, data);
@@ -212,8 +212,11 @@ var JsonApiDatastore = /** @class */ (function () {
         return new modelType(this, data);
     };
     JsonApiDatastore.prototype.extractRecordData = function (res, modelType, model) {
-        var body = res.json();
-        if (!body) {
+        var body = res.body;
+        // Error in Angular < 5.2.4 (see https://github.com/angular/angular/issues/20744)
+        // null is converted to 'null', so this is temporary needed to make testcase possible
+        // (and to avoid a decrease of the coverage)
+        if (!body || body === 'null') {
             throw new Error('no body in response');
         }
         if (!body.data) {
@@ -235,16 +238,13 @@ var JsonApiDatastore = /** @class */ (function () {
         return deserializedModel;
     };
     JsonApiDatastore.prototype.handleError = function (error) {
-        try {
-            var body = error.json();
-            if (body.errors && body.errors instanceof Array) {
-                var errors = new error_response_model_1.ErrorResponse(body.errors);
-                console.error(error, errors);
-                return Observable_1.Observable.throw(errors);
-            }
-        }
-        catch (e) {
-            // no valid JSON
+        if (error instanceof http_1.HttpErrorResponse &&
+            error.error instanceof Object &&
+            error.error.errors &&
+            error.error.errors instanceof Array) {
+            var errors = new error_response_model_1.ErrorResponse(error.error.errors);
+            console.error(error, errors);
+            return Observable_1.Observable.throw(errors);
         }
         console.error(error);
         return Observable_1.Observable.throw(error);
@@ -253,25 +253,32 @@ var JsonApiDatastore = /** @class */ (function () {
         var metaModel = Reflect.getMetadata('JsonApiModelConfig', modelType).meta;
         return new metaModel(body);
     };
+    /** @deprecated - use buildHeaders method to build request headers **/
     JsonApiDatastore.prototype.getOptions = function (customHeaders) {
-        var requestHeaders = new http_1.Headers();
-        requestHeaders.set('Accept', 'application/vnd.api+json');
-        requestHeaders.set('Content-Type', 'application/vnd.api+json');
+        return {
+            headers: this.buildHeaders(customHeaders),
+        };
+    };
+    JsonApiDatastore.prototype.buildHeaders = function (customHeaders) {
+        var requestHeaders = {
+            Accept: 'application/vnd.api+json',
+            'Content-Type': 'application/vnd.api+json'
+        };
         if (this._headers) {
             this._headers.forEach(function (values, name) {
                 if (name !== undefined) {
-                    requestHeaders.set(name, values);
+                    requestHeaders[name] = values;
                 }
             });
         }
         if (customHeaders) {
             customHeaders.forEach(function (values, name) {
                 if (name !== undefined) {
-                    requestHeaders.set(name, values);
+                    requestHeaders[name] = values;
                 }
             });
         }
-        return new http_1.RequestOptions({ headers: requestHeaders });
+        return new http_1.HttpHeaders(requestHeaders);
     };
     JsonApiDatastore.prototype._toQueryString = function (params) {
         return qs.stringify(params, { arrayFormat: 'brackets' });
@@ -350,7 +357,7 @@ var JsonApiDatastore = /** @class */ (function () {
     ];
     /** @nocollapse */
     JsonApiDatastore.ctorParameters = function () { return [
-        { type: http_1.Http, },
+        { type: http_1.HttpClient, },
     ]; };
     return JsonApiDatastore;
 }());
