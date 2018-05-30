@@ -37,7 +37,7 @@ export declare class JsonApiDatastore {
     protected extractQueryData<T extends JsonApiModel>(body: any, modelType: ModelType<T>, withMeta?: boolean): T[] | JsonApiQueryData<T>;
     protected deserializeModel<T extends JsonApiModel>(modelType: ModelType<T>, data: any): T;
     protected extractRecordData<T extends JsonApiModel>(res: HttpResponse<Object>, modelType: ModelType<T>, model?: T): T;
-    protected handleError(error: any): ErrorObservable;
+    protected handleError(error: any): ErrorObservable<any>;
     protected parseMeta(body: any, modelType: ModelType<JsonApiModel>): any;
     /** @deprecated - use buildHeaders method to build request headers **/
     protected getOptions(customHeaders?: Headers): any;
