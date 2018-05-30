@@ -316,7 +316,7 @@ export class JsonApiDatastore {
     return deserializedModel;
   }
 
-  protected handleError(error: any): ErrorObservable {
+  protected handleError(error: any): ErrorObservable<any> {
 
     if (
       error instanceof HttpErrorResponse &&
