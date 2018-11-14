@@ -1,1 +1,1 @@
-export declare const AttributeMetadata: symbol;
+export declare const AttributeMetadata: any;

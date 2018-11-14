@@ -1,1 +1,2 @@
-export declare function JsonApiModelConfig(config?: any): (target: any) => void;
+import { ModelConfig } from '../interfaces/model-config.interface';
+export declare function JsonApiModelConfig(config: ModelConfig): (target: any) => void;
