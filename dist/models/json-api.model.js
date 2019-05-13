@@ -13,9 +13,8 @@ var symbols_1 = require("../constants/symbols");
 // tslint:disable-next-line:variable-name
 var AttributeMetadataIndex = symbols_1.AttributeMetadata;
 var JsonApiModel = /** @class */ (function () {
-    // tslint:disable-next-line:variable-name
-    function JsonApiModel(_datastore, data) {
-        this._datastore = _datastore;
+    function JsonApiModel(internalDatastore, data) {
+        this.internalDatastore = internalDatastore;
         this.modelInitialization = false;
         if (data) {
             this.modelInitialization = true;
@@ -44,7 +43,7 @@ var JsonApiModel = /** @class */ (function () {
     JsonApiModel.prototype.save = function (params, headers, customUrl) {
         this.checkChanges();
         var attributesMetadata = this[AttributeMetadataIndex];
-        return this._datastore.saveRecord(attributesMetadata, this, params, headers, customUrl);
+        return this.internalDatastore.saveRecord(attributesMetadata, this, params, headers, customUrl);
     };
     Object.defineProperty(JsonApiModel.prototype, "hasDirtyAttributes", {
         get: function () {
@@ -109,7 +108,7 @@ var JsonApiModel = /** @class */ (function () {
                         if (!includes_1.default(modelTypesFetched, typeName)) {
                             modelTypesFetched.push(typeName);
                             // tslint:disable-next-line:max-line-length
-                            var modelType = Reflect.getMetadata('JsonApiDatastoreConfig', this._datastore.constructor).models[typeName];
+                            var modelType = Reflect.getMetadata('JsonApiDatastoreConfig', this.internalDatastore.constructor).models[typeName];
                             if (modelType) {
                                 var relationshipModels = this.getHasManyRelationship(modelType, relationship.data, included, typeName, remainingModels);
                                 if (relationshipModels.length > 0) {
@@ -117,7 +116,7 @@ var JsonApiModel = /** @class */ (function () {
                                 }
                             }
                             else {
-                                throw { message: 'parseHasMany - Model type for relationship ' + typeName + ' not found.' };
+                                throw { message: "parseHasMany - Model type for relationship " + typeName + " not found." };
                             }
                         }
                         if (allModels.length > 0) {
@@ -139,7 +138,7 @@ var JsonApiModel = /** @class */ (function () {
                     if (dataRelationship) {
                         var typeName = dataRelationship.type;
                         // tslint:disable-next-line:max-line-length
-                        var modelType = Reflect.getMetadata('JsonApiDatastoreConfig', this._datastore.constructor).models[typeName];
+                        var modelType = Reflect.getMetadata('JsonApiDatastoreConfig', this.internalDatastore.constructor).models[typeName];
                         if (modelType) {
                             var relationshipModel = this.getBelongsToRelationship(modelType, dataRelationship, included, typeName, remainingModels);
                             if (relationshipModel) {
@@ -147,7 +146,7 @@ var JsonApiModel = /** @class */ (function () {
                             }
                         }
                         else {
-                            throw { message: 'parseBelongsTo - Model type for relationship ' + typeName + ' not found.' };
+                            throw { message: "parseBelongsTo - Model type for relationship " + typeName + " not found." };
                         }
                     }
                 }
@@ -181,16 +180,16 @@ var JsonApiModel = /** @class */ (function () {
             newObject.syncRelationships(relationshipData, included, modelsForProcessing);
             return newObject;
         }
-        return this._datastore.peekRecord(modelType, id);
+        return this.internalDatastore.peekRecord(modelType, id);
     };
     JsonApiModel.prototype.createOrPeek = function (modelType, data) {
-        var peek = this._datastore.peekRecord(modelType, data.id);
+        var peek = this.internalDatastore.peekRecord(modelType, data.id);
         if (peek) {
-            _.extend(peek, this._datastore.transformSerializedNamesToPropertyNames(modelType, data.attributes));
+            _.extend(peek, this.internalDatastore.transformSerializedNamesToPropertyNames(modelType, data.attributes));
             return peek;
         }
-        var newObject = this._datastore.deserializeModel(modelType, data);
-        this._datastore.addToStore(newObject);
+        var newObject = this.internalDatastore.deserializeModel(modelType, data);
+        this.internalDatastore.addToStore(newObject);
         return newObject;
     };
     return JsonApiModel;

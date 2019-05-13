@@ -1,16 +1,6 @@
 "use strict";
-var __assign = (this && this.__assign) || function () {
-    __assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return __assign.apply(this, arguments);
-};
 Object.defineProperty(exports, "__esModule", { value: true });
+var tslib_1 = require("tslib");
 var __1 = require("../..");
 exports.DEFAULT_OPTIONS = {
     nullValue: false,
@@ -20,7 +10,7 @@ var JsonModelConverter = /** @class */ (function () {
     function JsonModelConverter(model, options) {
         if (options === void 0) { options = {}; }
         this.modelType = model; // <ModelType<T>>model
-        this.options = __assign({}, exports.DEFAULT_OPTIONS, options);
+        this.options = tslib_1.__assign({}, exports.DEFAULT_OPTIONS, options);
     }
     JsonModelConverter.prototype.mask = function (value) {
         if (!value && !this.options.nullValue) {
@@ -32,7 +22,7 @@ var JsonModelConverter = /** @class */ (function () {
         var result = null;
         if (this.options.hasMany) {
             if (!Array.isArray(value)) {
-                throw new Error('ERROR: JsonModelConverter: Expected array but got ' + typeof value + '.');
+                throw new Error("ERROR: JsonModelConverter: Expected array but got " + typeof value + ".");
             }
             result = [];
             for (var _i = 0, value_1 = value; _i < value_1.length; _i++) {

@@ -3,12 +3,12 @@ import { JsonApiDatastore } from '../services/json-api-datastore.service';
 import { ModelConfig } from '../interfaces/model-config.interface';
 import { HttpHeaders } from '@angular/common/http';
 export declare class JsonApiModel {
-    private _datastore;
+    private internalDatastore;
     id: string;
     modelInitialization: boolean;
     [key: string]: any;
     lastSyncModels: Array<any>;
-    constructor(_datastore: JsonApiDatastore, data?: any);
+    constructor(internalDatastore: JsonApiDatastore, data?: any);
     isModelInitialization(): boolean;
     syncRelationships(data: any, included: any, remainingModels?: Array<any>): void;
     save(params?: any, headers?: HttpHeaders, customUrl?: string): Observable<this>;
