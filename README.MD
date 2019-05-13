@@ -487,6 +487,17 @@ and in the `save()` method:
 post.save({}, new Headers({'Authorization': 'Bearer ' + accessToken})).subscribe();
 ```
 
+### Custom request options
+
+You can add your custom request options to be appended to each http call:
+
+```typescript
+this.datastore.requestOptions = {
+    withCredentials: false,
+    myOption: 123
+}
+```
+
 ### Error handling
 
 Error handling is done in the `subscribe` method of the returned Observables.
@@ -508,7 +519,7 @@ this.datastore.findAll(Post).subscribe(
 );
 ```
 
-It's also possible to handle errors for all requests by overriding `handleError(error: any): ErrorObservable` in the datastore.
+It's also possible to handle errors for all requests by overriding `handleError(error: any): Observable` in the datastore.
 
 ### Dates
 
@@ -538,7 +549,7 @@ Moreover, it should be noted that the following assumptions have been made:
 To generate all `*.js`, `*.js.map` and `*.d.ts` files:
 
 ```bash
-$ npm run ngc
+$ npm run build
 ```
 
 To lint all `*.ts` files:

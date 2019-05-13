@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "importHelpers": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
     // Angular is currently not compatible with recent TS version + strictNullCheck: https://github.com/angular/angular/issues/17863
@@ -40,6 +41,6 @@
     "inlineSourceMap": true
   },
   "angularCompilerOptions": {
-    "genDir": "src/compiled"
+    "skipTemplateCodegen": true
   }
 }
