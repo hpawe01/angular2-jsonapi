@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var symbols_1 = require("../constants/symbols");
 var date_converter_1 = require("../converters/date/date.converter");
+var _ = require("lodash");
 function Attribute(options) {
     if (options === void 0) { options = {}; }
     return function (target, propertyName) {
@@ -39,30 +40,37 @@ function Attribute(options) {
             mappingMetadata[serializedPropertyName] = propertyName;
             Reflect.defineMetadata('AttributeMapping', mappingMetadata, target);
         };
-        var setMetadata = function (hasDirtyAttributes, instance, oldValue, newValue, isNew) {
+        var setMetadata = function (instance, oldValue, newValue) {
             var targetType = Reflect.getMetadata('design:type', target, propertyName);
             if (!instance[symbols_1.AttributeMetadata]) {
                 instance[symbols_1.AttributeMetadata] = {};
             }
-            var propertyHasDirtyAttributes = (oldValue === newValue) ? false : hasDirtyAttributes;
             instance[symbols_1.AttributeMetadata][propertyName] = {
                 newValue: newValue,
                 oldValue: oldValue,
+                nested: false,
                 serializedName: options.serializedName,
-                hasDirtyAttributes: propertyHasDirtyAttributes,
+                hasDirtyAttributes: !_.isEqual(oldValue, newValue),
                 serialisationValue: converter(targetType, newValue, true)
             };
         };
         var getter = function () {
-            return this['_' + propertyName];
+            return this["_" + propertyName];
         };
         var setter = function (newVal) {
             var targetType = Reflect.getMetadata('design:type', target, propertyName);
             var convertedValue = converter(targetType, newVal);
-            if (convertedValue !== this['_' + propertyName]) {
-                setMetadata(true, this, this['_' + propertyName], newVal, !this.id);
-                this['_' + propertyName] = convertedValue;
+            var oldValue = null;
+            if (this.isModelInitialization() && this.id) {
+                oldValue = converter(targetType, newVal);
             }
+            else {
+                if (this[symbols_1.AttributeMetadata] && this[symbols_1.AttributeMetadata][propertyName]) {
+                    oldValue = this[symbols_1.AttributeMetadata][propertyName]['oldValue'];
+                }
+            }
+            this["_" + propertyName] = convertedValue;
+            setMetadata(this, oldValue, convertedValue);
         };
         if (delete target[propertyName]) {
             saveAnnotations();
