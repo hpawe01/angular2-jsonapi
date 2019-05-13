@@ -1,3 +1,22 @@
+# [7.0.0]
+
+  ### BREAKING CHANGES
+
+  * Upgraded the library to Angular 7
+
+# [6.1.3]
+
+  * Fixed rollbackAttributes to public
+  * Fixed tests
+
+# [6.1.2]
+
+  * Added support for custom request options
+
+# [6.1.2-beta]
+
+  * Added support for custom request options
+
 # [6.0.1]
 
   * Angular 6 support

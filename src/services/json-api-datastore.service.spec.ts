@@ -8,14 +8,14 @@ import { API_VERSION, BASE_URL, Datastore } from '../../test/datastore.service';
 import { ErrorResponse } from '../models/error-response.model';
 import { getSampleBook } from '../../test/fixtures/book.fixture';
 import { Book } from '../../test/models/book.model';
-import { ModelConfig } from '../index';
+import { CrimeBook } from '../../test/models/crime-book.model';
+import { JsonApiQueryData, ModelConfig } from '../index';
 import {
   API_VERSION_FROM_CONFIG,
   BASE_URL_FROM_CONFIG,
   DatastoreWithConfig
 } from '../../test/datastore-with-config.service';
-import { HttpHeaders, HttpErrorResponse } from '@angular/common/http';
-
+import { HttpHeaders } from '@angular/common/http';
 
 let datastore: Datastore;
 let datastoreWithConfig: DatastoreWithConfig;
@@ -53,7 +53,7 @@ describe('JsonApiDatastore', () => {
       const authorModelConfig: ModelConfig = Reflect.getMetadata('JsonApiModelConfig', Author);
       const expectedUrl = `${BASE_URL}/${API_VERSION}/${authorModelConfig.type}`;
 
-      datastore.query(Author).subscribe();
+      datastore.findAll(Author).subscribe();
 
       const queryRequest = httpMock.expectOne({ method: 'GET', url: expectedUrl });
       queryRequest.flush({ data: [] });
@@ -63,7 +63,7 @@ describe('JsonApiDatastore', () => {
       const authorModelConfig: ModelConfig = Reflect.getMetadata('JsonApiModelConfig', Author);
       const expectedUrl = `${BASE_URL_FROM_CONFIG}/${API_VERSION_FROM_CONFIG}/${authorModelConfig.type}`;
 
-      datastoreWithConfig.query(Author).subscribe();
+      datastoreWithConfig.findAll(Author).subscribe();
 
       const queryRequest = httpMock.expectOne({ method: 'GET', url: expectedUrl });
       queryRequest.flush({ data: [] });
@@ -74,7 +74,7 @@ describe('JsonApiDatastore', () => {
       const authorModelConfig: ModelConfig = Reflect.getMetadata('JsonApiModelConfig', CustomAuthor);
       const expectedUrl = `${BASE_URL_FROM_CONFIG}/${AUTHOR_API_VERSION}/${AUTHOR_MODEL_ENDPOINT_URL}`;
 
-      datastoreWithConfig.query(CustomAuthor).subscribe();
+      datastoreWithConfig.findAll(CustomAuthor).subscribe();
 
       const queryRequest = httpMock.expectOne({ method: 'GET', url: expectedUrl });
       queryRequest.flush({ data: [] });
@@ -83,7 +83,7 @@ describe('JsonApiDatastore', () => {
     it('should set JSON API headers', () => {
       const expectedUrl = `${BASE_URL}/${API_VERSION}/authors`;
 
-      datastore.query(Author).subscribe();
+      datastore.findAll(Author).subscribe();
 
       const queryRequest = httpMock.expectOne({ method: 'GET', url: expectedUrl });
       expect(queryRequest.request.headers.get('Content-Type')).toEqual('application/vnd.api+json');
@@ -103,13 +103,15 @@ describe('JsonApiDatastore', () => {
           }
         }
       };
+
+      // tslint:disable-next-line:prefer-template
       const expectedUrl = `${BASE_URL}/${API_VERSION}/` + 'authors?' +
         encodeURIComponent('page[size]') + '=10&' +
         encodeURIComponent('page[number]') + '=1&' +
         encodeURIComponent('include') + '=comments&' +
         encodeURIComponent('filter[title][keyword]') + '=Tolkien';
 
-      datastore.query(Author, queryData).subscribe();
+      datastore.findAll(Author, queryData).subscribe();
 
       httpMock.expectNone(`${BASE_URL}/${API_VERSION}`);
       const queryRequest = httpMock.expectOne({ method: 'GET', url: expectedUrl });
@@ -119,7 +121,7 @@ describe('JsonApiDatastore', () => {
     it('should have custom headers', () => {
       const expectedUrl = `${BASE_URL}/${API_VERSION}/authors`;
 
-      datastore.query(Author, null, new HttpHeaders({ Authorization: 'Bearer' })).subscribe();
+      datastore.findAll(Author, null, new HttpHeaders({ Authorization: 'Bearer' })).subscribe();
 
       const queryRequest = httpMock.expectOne({ method: 'GET', url: expectedUrl });
       expect(queryRequest.request.headers.get('Authorization')).toEqual('Bearer');
@@ -130,7 +132,7 @@ describe('JsonApiDatastore', () => {
       const expectedUrl = `${BASE_URL}/${API_VERSION}/authors`;
 
       datastore.headers = new HttpHeaders({ Authorization: 'Bearer' });
-      datastore.query(Author, null, new HttpHeaders({ Authorization: 'Basic' })).subscribe();
+      datastore.findAll(Author, null, new HttpHeaders({ Authorization: 'Basic' })).subscribe();
 
       const queryRequest = httpMock.expectOne({ method: 'GET', url: expectedUrl });
       expect(queryRequest.request.headers.get('Authorization')).toEqual('Basic');
@@ -140,7 +142,8 @@ describe('JsonApiDatastore', () => {
     it('should get authors', () => {
       const expectedUrl = `${BASE_URL}/${API_VERSION}/authors`;
 
-      datastore.query(Author).subscribe((authors) => {
+      datastore.findAll(Author).subscribe((data: JsonApiQueryData<Author>) => {
+        const authors = data.getModels();
         expect(authors).toBeDefined();
         expect(authors.length).toEqual(1);
         expect(authors[0].id).toEqual(AUTHOR_ID);
@@ -203,7 +206,7 @@ describe('JsonApiDatastore', () => {
         ]
       };
 
-      datastore.query(Author).subscribe(
+      datastore.findAll(Author).subscribe(
         (authors) => fail('onNext has been called'),
         (response) => {
           expect(response).toEqual(jasmine.any(ErrorResponse));
@@ -233,7 +236,7 @@ describe('JsonApiDatastore', () => {
       const expectedQueryString = 'arrayParam[]=4&arrayParam[]=5&arrayParam[]=6';
       const expectedUrl = encodeURI(`${BASE_URL}/${API_VERSION}/books?${expectedQueryString}`);
 
-      datastore.query(Book, { arrayParam: [4, 5, 6] }).subscribe();
+      datastore.findAll(Book, { arrayParam: [4, 5, 6] }).subscribe();
 
       const queryRequest = httpMock.expectOne(expectedUrl);
       queryRequest.flush({ data: [] });
@@ -480,6 +483,70 @@ describe('JsonApiDatastore', () => {
       expect(obj.id).toBe(AUTHOR_ID);
       expect(obj.type).toBe('authors');
       expect(obj.relationships).toBeUndefined();
+
+      saveRequest.flush({});
+    });
+
+    it('should not update invalid mixed HasMany relationship of author', () => {
+      const expectedUrl = `${BASE_URL}/${API_VERSION}/authors/${AUTHOR_ID}`;
+      const author = new Author(datastore, {
+        id: AUTHOR_ID,
+        attributes: {
+          date_of_birth: parse(AUTHOR_BIRTH),
+          name: AUTHOR_NAME
+        }
+      });
+      const crimeBook = datastore.createRecord(CrimeBook, {
+        id: 124,
+        title: `Crime book - ${BOOK_TITLE}`,
+      });
+      const originalModelEndpointUrl = crimeBook.modelConfig.modelEndpointUrl;
+      crimeBook.modelConfig.modelEndpointUrl = 'crimeBooks';
+
+      author.books = [datastore.createRecord(Book, {
+        id: 123,
+        title: BOOK_TITLE,
+      }), crimeBook];
+
+      author.save().subscribe();
+
+      const saveRequest = httpMock.expectOne({ method: 'PATCH', url: expectedUrl });
+      const obj = saveRequest.request.body.data;
+      expect(obj.id).toBe(AUTHOR_ID);
+      expect(obj.type).toBe('authors');
+      expect(obj.relationships).toBeUndefined();
+
+      saveRequest.flush({});
+      crimeBook.modelConfig.modelEndpointUrl = originalModelEndpointUrl;
+    });
+
+    it('should update valid mixed HasMany relationship of author', () => {
+      const expectedUrl = `${BASE_URL}/${API_VERSION}/authors/${AUTHOR_ID}`;
+      const author = new Author(datastore, {
+        id: AUTHOR_ID,
+        attributes: {
+          date_of_birth: parse(AUTHOR_BIRTH),
+          name: AUTHOR_NAME,
+          firstNames: ['John', 'Ronald', 'Reuel']
+        }
+      });
+
+      author.books = [datastore.createRecord(Book, {
+        id: 123,
+        title: BOOK_TITLE,
+      }), datastore.createRecord(CrimeBook, {
+        id: 125,
+        title: `Crime book - ${BOOK_TITLE}`,
+      })];
+
+      author.save().subscribe();
+
+      const saveRequest = httpMock.expectOne({ method: 'PATCH', url: expectedUrl });
+      const obj = saveRequest.request.body.data;
+      expect(obj.id).toBe(AUTHOR_ID);
+      expect(obj.type).toBe('authors');
+      expect(obj.relationships).toBeDefined();
+      expect(obj.relationships.books.data.length).toBe(2);
 
       saveRequest.flush({});
     });
