@@ -155,6 +155,7 @@ var JsonApiDatastore = /** @class */ (function () {
     JsonApiDatastore.prototype.getRelationships = function (data) {
         var _this = this;
         var relationships;
+        var toManyRelationships = Reflect.getMetadata('HasMany', data) || [];
         for (var key in data) {
             if (data.hasOwnProperty(key)) {
                 if (data[key] instanceof json_api_model_1.JsonApiModel) {
@@ -165,7 +166,9 @@ var JsonApiDatastore = /** @class */ (function () {
                         };
                     }
                 }
-                else if (data[key] instanceof Array && data[key].length > 0 && this.isValidToManyRelation(data[key])) {
+                else if (data[key] instanceof Array
+                    && this.isToManyRelationship(key, toManyRelationships)
+                    && this.containsValidToManyRelations(data[key])) {
                     relationships = relationships || {};
                     var relationshipData = data[key]
                         .filter(function (model) { return model.id; })
@@ -178,7 +181,13 @@ var JsonApiDatastore = /** @class */ (function () {
         }
         return relationships;
     };
-    JsonApiDatastore.prototype.isValidToManyRelation = function (objects) {
+    JsonApiDatastore.prototype.isToManyRelationship = function (key, toManyRelationships) {
+        return !!toManyRelationships.find(function (property) { return property.propertyName === key; });
+    };
+    JsonApiDatastore.prototype.containsValidToManyRelations = function (objects) {
+        if (!objects.length) {
+            return true;
+        }
         var isJsonApiModel = objects.every(function (item) { return item instanceof json_api_model_1.JsonApiModel; });
         if (!isJsonApiModel) {
             return false;
