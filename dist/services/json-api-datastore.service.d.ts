@@ -29,8 +29,7 @@ export declare class JsonApiDatastore {
     requestOptions: object;
     protected buildUrl<T extends JsonApiModel>(modelType: ModelType<T>, params?: any, id?: string, customUrl?: string): string;
     protected getRelationships(data: any): any;
-    protected isToManyRelationship(key: string, toManyRelationships: any[]): boolean;
-    protected containsValidToManyRelations(objects: Array<any>): boolean;
+    protected isValidToManyRelation(objects: Array<any>): boolean;
     protected buildSingleRelationshipData(model: JsonApiModel): any;
     protected extractQueryData<T extends JsonApiModel>(response: HttpResponse<object>, modelType: ModelType<T>, withMeta?: boolean): Array<T> | JsonApiQueryData<T>;
     deserializeModel<T extends JsonApiModel>(modelType: ModelType<T>, data: any): T;

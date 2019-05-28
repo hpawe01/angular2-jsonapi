@@ -155,36 +155,42 @@ var JsonApiDatastore = /** @class */ (function () {
     JsonApiDatastore.prototype.getRelationships = function (data) {
         var _this = this;
         var relationships;
-        var toManyRelationships = Reflect.getMetadata('HasMany', data) || [];
-        for (var key in data) {
+        var belongsToMetadata = Reflect.getMetadata('BelongsTo', data) || [];
+        var hasManyMetadata = Reflect.getMetadata('HasMany', data) || [];
+        var _loop_1 = function (key) {
             if (data.hasOwnProperty(key)) {
                 if (data[key] instanceof json_api_model_1.JsonApiModel) {
                     relationships = relationships || {};
                     if (data[key].id) {
-                        relationships[key] = {
-                            data: this.buildSingleRelationshipData(data[key])
+                        var entity = belongsToMetadata.find(function (entity) { return entity.propertyName === key; });
+                        var relationshipKey = entity.relationship;
+                        relationships[relationshipKey] = {
+                            data: this_1.buildSingleRelationshipData(data[key])
                         };
                     }
                 }
-                else if (data[key] instanceof Array
-                    && this.isToManyRelationship(key, toManyRelationships)
-                    && this.containsValidToManyRelations(data[key])) {
-                    relationships = relationships || {};
-                    var relationshipData = data[key]
-                        .filter(function (model) { return model.id; })
-                        .map(function (model) { return _this.buildSingleRelationshipData(model); });
-                    relationships[key] = {
-                        data: relationshipData
-                    };
+                else if (data[key] instanceof Array) {
+                    var entity = hasManyMetadata.find(function (entity) { return entity.propertyName === key; });
+                    if (entity && this_1.isValidToManyRelation(data[key])) {
+                        relationships = relationships || {};
+                        var relationshipKey = entity.relationship;
+                        var relationshipData = data[key]
+                            .filter(function (model) { return model.id; })
+                            .map(function (model) { return _this.buildSingleRelationshipData(model); });
+                        relationships[relationshipKey] = {
+                            data: relationshipData
+                        };
+                    }
                 }
             }
+        };
+        var this_1 = this;
+        for (var key in data) {
+            _loop_1(key);
         }
         return relationships;
     };
-    JsonApiDatastore.prototype.isToManyRelationship = function (key, toManyRelationships) {
-        return !!toManyRelationships.find(function (property) { return property.propertyName === key; });
-    };
-    JsonApiDatastore.prototype.containsValidToManyRelations = function (objects) {
+    JsonApiDatastore.prototype.isValidToManyRelation = function (objects) {
         if (!objects.length) {
             return true;
         }
