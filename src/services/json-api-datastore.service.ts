@@ -217,7 +217,8 @@ export class JsonApiDatastore {
   protected getRelationships(data: any): any {
     let relationships: any;
 
-    const toManyRelationships: any[] = Reflect.getMetadata('HasMany', data) || [];
+    const belongsToMetadata: any[] = Reflect.getMetadata('BelongsTo', data) || [];
+    const hasManyMetadata: any[] = Reflect.getMetadata('HasMany', data) || [];
 
     for (const key in data) {
       if (data.hasOwnProperty(key)) {
@@ -225,22 +226,26 @@ export class JsonApiDatastore {
           relationships = relationships || {};
 
           if (data[key].id) {
-            relationships[key] = {
+            const entity = belongsToMetadata.find((entity: any) => entity.propertyName === key);
+            const relationshipKey = entity.relationship;
+            relationships[relationshipKey] = {
               data: this.buildSingleRelationshipData(data[key])
             };
           }
-        } else if (data[key] instanceof Array
-          && this.isToManyRelationship(key, toManyRelationships)
-          && this.containsValidToManyRelations(data[key])
-        ) {
-          relationships = relationships || {};
-          const relationshipData = data[key]
-            .filter((model: JsonApiModel) => model.id)
-            .map((model: JsonApiModel) => this.buildSingleRelationshipData(model));
+        } else if (data[key] instanceof Array) {
+          const entity = hasManyMetadata.find((entity: any) => entity.propertyName === key);
+          if (entity && this.isValidToManyRelation(data[key])) {
+            relationships = relationships || {};
 
-          relationships[key] = {
-            data: relationshipData
-          };
+            const relationshipKey = entity.relationship;
+            const relationshipData = data[key]
+              .filter((model: JsonApiModel) => model.id)
+              .map((model: JsonApiModel) => this.buildSingleRelationshipData(model));
+
+            relationships[relationshipKey] = {
+              data: relationshipData
+            };
+          }
         }
       }
     }
@@ -248,11 +253,7 @@ export class JsonApiDatastore {
     return relationships;
   }
 
-  protected isToManyRelationship(key: string, toManyRelationships: any[]): boolean {
-    return !!toManyRelationships.find((property: any) => property.propertyName === key);
-  }
-
-  protected containsValidToManyRelations(objects: Array<any>): boolean {
+  protected isValidToManyRelation(objects: Array<any>): boolean {
     if (!objects.length) {
       return true;
     }
