@@ -10,6 +10,8 @@
     "start": "ng serve",
     "test": "ng test"
   },
+  "main": "./dist/angular2-jsonapi/index.js",
+  "typings": "./dist/angular2-jsonapi/index.d.ts",
   "dependencies": {},
   "devDependencies": {
     "@angular-devkit/build-angular": "~0.803.4",
