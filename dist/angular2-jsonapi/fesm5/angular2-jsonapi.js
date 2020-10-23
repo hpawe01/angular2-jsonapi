@@ -1,8 +1,7 @@
 import { __assign, __values } from 'tslib';
 import { parseISO } from 'date-fns';
 import { isEqual, cloneDeep, extend } from 'lodash';
-import find from 'lodash-es/find';
-import includes from 'lodash-es/includes';
+import { includes, find } from 'lodash-es';
 import { Injectable, NgModule } from '@angular/core';
 import { HttpErrorResponse, HttpHeaders, HttpClient, HttpClientModule } from '@angular/common/http';
 import { map, catchError } from 'rxjs/operators';
@@ -1898,6 +1897,20 @@ var JsonApiDatastore = /** @class */ (function () {
                         };
                     }
                 }
+                else if (data[key] === null) {
+                    /** @type {?} */
+                    var entity = belongsToMetadata.find((/**
+                     * @param {?} entity
+                     * @return {?}
+                     */
+                    function (entity) { return entity.propertyName === key; }));
+                    if (entity) {
+                        relationships = relationships || {};
+                        relationships[entity.relationship] = {
+                            data: null
+                        };
+                    }
+                }
             }
         };
         var this_1 = this;
@@ -2205,7 +2218,7 @@ var JsonApiDatastore = /** @class */ (function () {
         /** @type {?} */
         var modelsTypes = Reflect.getMetadata('JsonApiDatastoreConfig', this.constructor).models;
         for (var relationship in relationships) {
-            if (relationships.hasOwnProperty(relationship) && model.hasOwnProperty(relationship)) {
+            if (relationships.hasOwnProperty(relationship) && model.hasOwnProperty(relationship) && model[relationship]) {
                 /** @type {?} */
                 var relationshipModel = model[relationship];
                 /** @type {?} */

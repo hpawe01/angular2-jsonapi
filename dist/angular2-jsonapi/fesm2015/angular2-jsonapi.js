@@ -1,7 +1,6 @@
 import { parseISO } from 'date-fns';
 import { isEqual, cloneDeep, extend } from 'lodash';
-import find from 'lodash-es/find';
-import includes from 'lodash-es/includes';
+import { includes, find } from 'lodash-es';
 import { Injectable, NgModule } from '@angular/core';
 import { HttpErrorResponse, HttpHeaders, HttpClient, HttpClientModule } from '@angular/common/http';
 import { map, catchError } from 'rxjs/operators';
@@ -1596,6 +1595,20 @@ class JsonApiDatastore {
                         };
                     }
                 }
+                else if (data[key] === null) {
+                    /** @type {?} */
+                    const entity = belongsToMetadata.find((/**
+                     * @param {?} entity
+                     * @return {?}
+                     */
+                    (entity) => entity.propertyName === key));
+                    if (entity) {
+                        relationships = relationships || {};
+                        relationships[entity.relationship] = {
+                            data: null
+                        };
+                    }
+                }
             }
         }
         return relationships;
@@ -1830,7 +1843,7 @@ class JsonApiDatastore {
         /** @type {?} */
         const modelsTypes = Reflect.getMetadata('JsonApiDatastoreConfig', this.constructor).models;
         for (const relationship in relationships) {
-            if (relationships.hasOwnProperty(relationship) && model.hasOwnProperty(relationship)) {
+            if (relationships.hasOwnProperty(relationship) && model.hasOwnProperty(relationship) && model[relationship]) {
                 /** @type {?} */
                 const relationshipModel = model[relationship];
                 /** @type {?} */

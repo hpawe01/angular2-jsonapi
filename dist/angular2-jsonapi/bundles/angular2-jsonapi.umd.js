@@ -1,11 +1,8 @@
 (function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('date-fns'), require('lodash'), require('lodash-es/find'), require('lodash-es/includes'), require('@angular/core'), require('@angular/common/http'), require('rxjs/operators'), require('rxjs'), require('qs'), require('reflect-metadata')) :
-    typeof define === 'function' && define.amd ? define('angular2-jsonapi', ['exports', 'date-fns', 'lodash', 'lodash-es/find', 'lodash-es/includes', '@angular/core', '@angular/common/http', 'rxjs/operators', 'rxjs', 'qs', 'reflect-metadata'], factory) :
-    (global = global || self, factory(global['angular2-jsonapi'] = {}, global.dateFns, global.lodash, global.find, global.includes, global.ng.core, global.ng.common.http, global.rxjs.operators, global.rxjs, global.qs));
-}(this, function (exports, dateFns, lodash, find, includes, core, http, operators, rxjs, qs) { 'use strict';
-
-    find = find && find.hasOwnProperty('default') ? find['default'] : find;
-    includes = includes && includes.hasOwnProperty('default') ? includes['default'] : includes;
+    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('date-fns'), require('lodash'), require('lodash-es'), require('@angular/core'), require('@angular/common/http'), require('rxjs/operators'), require('rxjs'), require('qs'), require('reflect-metadata')) :
+    typeof define === 'function' && define.amd ? define('angular2-jsonapi', ['exports', 'date-fns', 'lodash', 'lodash-es', '@angular/core', '@angular/common/http', 'rxjs/operators', 'rxjs', 'qs', 'reflect-metadata'], factory) :
+    (global = global || self, factory(global['angular2-jsonapi'] = {}, global['date-fns'], global.lodash, global['lodash-es'], global.ng.core, global.ng.common.http, global.rxjs.operators, global.rxjs, global.qs));
+}(this, function (exports, dateFns, lodash, lodashEs, core, http, operators, rxjs, qs) { 'use strict';
 
     /*! *****************************************************************************
     Copyright (c) Microsoft Corporation. All rights reserved.
@@ -1134,7 +1131,7 @@
                                     var typeIndex = _d.value;
                                     /** @type {?} */
                                     var typeName = relationship.data[typeIndex].type;
-                                    if (!includes(modelTypesFetched, typeName)) {
+                                    if (!lodashEs.includes(modelTypesFetched, typeName)) {
                                         modelTypesFetched.push(typeName);
                                         // tslint:disable-next-line:max-line-length
                                         /** @type {?} */
@@ -1258,7 +1255,7 @@
              */
             function (item) {
                 /** @type {?} */
-                var relationshipData = find(included, (/** @type {?} */ ({ id: item.id, type: typeName })));
+                var relationshipData = lodashEs.find(included, (/** @type {?} */ ({ id: item.id, type: typeName })));
                 if (relationshipData) {
                     /** @type {?} */
                     var newObject = _this.createOrPeek(modelType, relationshipData);
@@ -1299,7 +1296,7 @@
             /** @type {?} */
             var id = data.id;
             /** @type {?} */
-            var relationshipData = find(included, (/** @type {?} */ ({ id: id, type: typeName })));
+            var relationshipData = lodashEs.find(included, (/** @type {?} */ ({ id: id, type: typeName })));
             if (relationshipData) {
                 /** @type {?} */
                 var newObject = this.createOrPeek(modelType, relationshipData);
@@ -2092,6 +2089,20 @@
                             };
                         }
                     }
+                    else if (data[key] === null) {
+                        /** @type {?} */
+                        var entity = belongsToMetadata.find((/**
+                         * @param {?} entity
+                         * @return {?}
+                         */
+                        function (entity) { return entity.propertyName === key; }));
+                        if (entity) {
+                            relationships = relationships || {};
+                            relationships[entity.relationship] = {
+                                data: null
+                            };
+                        }
+                    }
                 }
             };
             var this_1 = this;
@@ -2399,13 +2410,13 @@
             /** @type {?} */
             var modelsTypes = Reflect.getMetadata('JsonApiDatastoreConfig', this.constructor).models;
             for (var relationship in relationships) {
-                if (relationships.hasOwnProperty(relationship) && model.hasOwnProperty(relationship)) {
+                if (relationships.hasOwnProperty(relationship) && model.hasOwnProperty(relationship) && model[relationship]) {
                     /** @type {?} */
                     var relationshipModel = model[relationship];
                     /** @type {?} */
                     var hasMany = Reflect.getMetadata('HasMany', relationshipModel);
                     /** @type {?} */
-                    var propertyHasMany = find(hasMany, (/**
+                    var propertyHasMany = lodashEs.find(hasMany, (/**
                      * @param {?} property
                      * @return {?}
                      */
