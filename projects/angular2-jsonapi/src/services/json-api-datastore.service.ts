@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpHeaders, HttpResponse } from '@angular/common/http';
-import find from 'lodash-es/find';
+import { find } from 'lodash-es';
 import { catchError, map } from 'rxjs/operators';
 import { Observable, of, throwError } from 'rxjs';
 import { JsonApiModel } from '../models/json-api.model';
@@ -291,6 +291,16 @@ export class JsonApiDatastore {
               data: relationshipData
             };
           }
+        }  else if (data[key] === null) {
+          const entity = belongsToMetadata.find((entity: any) => entity.propertyName === key);
+
+          if (entity) {
+            relationships = relationships || {};
+
+            relationships[entity.relationship] = {
+              data: null
+            };
+          }
         }
       }
     }
@@ -463,7 +473,7 @@ export class JsonApiDatastore {
     const modelsTypes: any = Reflect.getMetadata('JsonApiDatastoreConfig', this.constructor).models;
 
     for (const relationship in relationships) {
-      if (relationships.hasOwnProperty(relationship) && model.hasOwnProperty(relationship)) {
+      if (relationships.hasOwnProperty(relationship) && model.hasOwnProperty(relationship) && model[relationship]) {
         const relationshipModel: JsonApiModel = model[relationship];
         const hasMany: any[] = Reflect.getMetadata('HasMany', relationshipModel);
         const propertyHasMany: any = find(hasMany, (property) => {
