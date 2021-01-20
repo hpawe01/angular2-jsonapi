@@ -2092,10 +2092,10 @@
                     else if (data[key] === null) {
                         /** @type {?} */
                         var entity = belongsToMetadata.find((/**
-                         * @param {?} entity
+                         * @param {?} anEntity
                          * @return {?}
                          */
-                        function (entity) { return entity.propertyName === key; }));
+                        function (anEntity) { return anEntity.propertyName === key; }));
                         if (entity) {
                             relationships = relationships || {};
                             relationships[entity.relationship] = {
@@ -2198,6 +2198,8 @@
             var body = response.body;
             /** @type {?} */
             var models = [];
+            /** @type {?} */
+            var resourceObjects = __spread(body.data, (body.included || []));
             body.data.forEach((/**
              * @param {?} data
              * @return {?}
@@ -2206,10 +2208,8 @@
                 /** @type {?} */
                 var model = _this.deserializeModel(modelType, data);
                 _this.addToStore(model);
-                if (body.included) {
-                    model.syncRelationships(data, body.included.concat(data));
-                    _this.addToStore(model);
-                }
+                model.syncRelationships(data, resourceObjects);
+                _this.addToStore(model);
                 models.push(model);
             }));
             if (withMeta && withMeta === true) {

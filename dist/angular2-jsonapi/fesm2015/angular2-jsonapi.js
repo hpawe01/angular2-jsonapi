@@ -1598,10 +1598,10 @@ class JsonApiDatastore {
                 else if (data[key] === null) {
                     /** @type {?} */
                     const entity = belongsToMetadata.find((/**
-                     * @param {?} entity
+                     * @param {?} anEntity
                      * @return {?}
                      */
-                    (entity) => entity.propertyName === key));
+                    (anEntity) => anEntity.propertyName === key));
                     if (entity) {
                         relationships = relationships || {};
                         relationships[entity.relationship] = {
@@ -1680,6 +1680,8 @@ class JsonApiDatastore {
         const body = response.body;
         /** @type {?} */
         const models = [];
+        /** @type {?} */
+        const resourceObjects = [...body.data, ...(body.included || [])];
         body.data.forEach((/**
          * @param {?} data
          * @return {?}
@@ -1688,10 +1690,8 @@ class JsonApiDatastore {
             /** @type {?} */
             const model = this.deserializeModel(modelType, data);
             this.addToStore(model);
-            if (body.included) {
-                model.syncRelationships(data, body.included.concat(data));
-                this.addToStore(model);
-            }
+            model.syncRelationships(data, resourceObjects);
+            this.addToStore(model);
             models.push(model);
         }));
         if (withMeta && withMeta === true) {

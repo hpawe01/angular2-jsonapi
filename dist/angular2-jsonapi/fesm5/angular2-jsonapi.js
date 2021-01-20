@@ -1,4 +1,4 @@
-import { __assign, __values } from 'tslib';
+import { __assign, __values, __spread } from 'tslib';
 import { parseISO } from 'date-fns';
 import { isEqual, cloneDeep, extend } from 'lodash';
 import { includes, find } from 'lodash-es';
@@ -1900,10 +1900,10 @@ var JsonApiDatastore = /** @class */ (function () {
                 else if (data[key] === null) {
                     /** @type {?} */
                     var entity = belongsToMetadata.find((/**
-                     * @param {?} entity
+                     * @param {?} anEntity
                      * @return {?}
                      */
-                    function (entity) { return entity.propertyName === key; }));
+                    function (anEntity) { return anEntity.propertyName === key; }));
                     if (entity) {
                         relationships = relationships || {};
                         relationships[entity.relationship] = {
@@ -2006,6 +2006,8 @@ var JsonApiDatastore = /** @class */ (function () {
         var body = response.body;
         /** @type {?} */
         var models = [];
+        /** @type {?} */
+        var resourceObjects = __spread(body.data, (body.included || []));
         body.data.forEach((/**
          * @param {?} data
          * @return {?}
@@ -2014,10 +2016,8 @@ var JsonApiDatastore = /** @class */ (function () {
             /** @type {?} */
             var model = _this.deserializeModel(modelType, data);
             _this.addToStore(model);
-            if (body.included) {
-                model.syncRelationships(data, body.included.concat(data));
-                _this.addToStore(model);
-            }
+            model.syncRelationships(data, resourceObjects);
+            _this.addToStore(model);
             models.push(model);
         }));
         if (withMeta && withMeta === true) {
